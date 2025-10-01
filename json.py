@@ -1,30 +1,25 @@
 import streamlit as st
 import json
-from google.oauth2 import service_account
-import gspread
 
-st.title("GCP Service Account JSON Test")
-
-# Paste your JSON securely here (better: store it in Streamlit secrets)
-service_account_json = st.secrets["gcp"]["service_account_json"]
+st.title("🔑 GCP Service Account JSON Test")
 
 try:
-    # Parse credentials
-    credentials_info = json.loads(service_account_json)
-    creds = service_account.Credentials.from_service_account_info(credentials_info)
-    st.success("✅ JSON is valid and credentials object created")
+    # Load JSON string from secrets
+    service_account_info = json.loads(st.secrets["gcp"]["service_account_json"])
 
-    # Optional: Test Google Sheets access
-    client = gspread.authorize(creds)
-    st.info("Trying to list accessible spreadsheets...")
+    # Show success message
+    st.success("✅ Service account JSON loaded successfully!")
 
-    spreadsheets = client.openall()
-    if spreadsheets:
-        st.write("Accessible Sheets:")
-        for sheet in spreadsheets:
-            st.write("-", sheet.title)
-    else:
-        st.warning("No spreadsheets accessible with this service account.")
+    # Display it for verification (hides private key for safety)
+    masked_info = {k: ("*****" if "key" in k else v) for k, v in service_account_info.items()}
+    st.json(masked_info)
+
+except KeyError as e:
+    st.error(f"❌ Missing key in secrets.toml: {e}")
+    st.write("Make sure you added `[gcp]` and `service_account_json` in your secrets.")
+
+except json.JSONDecodeError:
+    st.error("❌ The service_account_json is not valid JSON. Please check formatting.")
 
 except Exception as e:
-    st.error(f"❌ Error: {e}")
+    st.error(f"⚠️ Unexpected error: {e}")
